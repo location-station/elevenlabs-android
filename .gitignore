@@ -1,0 +1,23 @@
+# IDE files
+.idea/
+.gradle/
+local.properties
+*.iml
+
+# Build files
+build/
+captures/
+.cxx/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google services
+google-services.json
+
+# Local maven repository
+/build/repo
+
+# Misc
+.DS_Store
