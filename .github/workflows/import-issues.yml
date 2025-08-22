@@ -1,0 +1,47 @@
+name: Import Sprint CSV to Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      csv_path:
+        description: 'Path to CSV in the repo (e.g., /data/sprint2_core_tasks.csv)'
+        required: true
+        type: string
+      milestone:
+        description: 'Milestone name to attach (will be created if missing)'
+        required: true
+        type: string
+        default: 'Sprint 2 — Core features'
+      assignee:
+        description: 'Optional GitHub username to assign (leave blank for none)'
+        required: false
+        type: string
+      dry_run:
+        description: 'If true, do not create anything; just print plan'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run importer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python -m pip install --upgrade pip
+          python scripts/import_issues_from_csv.py             --csv "${{ github.workspace }}${{ inputs.csv_path }}"             --milestone "${{ inputs.milestone }}"             --assignee "${{ inputs.assignee }}"             ${{ inputs.dry_run && '--dry-run' || '' }}
