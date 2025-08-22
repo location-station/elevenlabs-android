@@ -1,0 +1,74 @@
+ID,ParentID,Title,Description,Type,Priority,Estimate,Milestone,Labels,Dependencies
+100,,Mic capture pipeline (AudioRecord),"Implement microphone capture at 16 kHz, mono, PCM 16-bit using AudioRecord.
+Acceptance criteria:
+- Captures frames at 10–20 ms size and pushes to ring buffer
+- Handles backpressure without ANRs; drops oldest frames under sustained pressure
+- Emits audio-level meter via Flow for UI
+- Unit tests simulate short/long buffers",Story,P0,8,Sprint 2 — Core features,"audio,android,audio-record",
+101,,Spike: Choose encoding strategy (PCM vs Opus),"Evaluate Opus integration vs raw PCM for WS transport.
+Acceptance criteria:
+- Brief ADR comparing (a) libopus via NDK, (b) existing JVM wrappers, (c) PCM-only with server-side encode
+- Prototype enc/dec with 1 minute of audio, measure CPU and added latency
+- Decision recorded with API impact",Spike,P0,3,Sprint 2 — Core features,"audio,codec,adr",100
+102,,Streaming encoder + sender,"Implement pluggable encoder (PCM passthrough first, Opus optional) and WS sender.
+Acceptance criteria:
+- Interface EncodedFrame { byte[] data; codec; pts }
+- Configurable frame size (10/20/40 ms)
+- Backpressure-aware sender with metrics hooks
+- Unit tests for framing and retry on transient send failures",Story,P0,8,Sprint 2 — Core features,"audio,codec,network",100;101
+103,,VAD gating + audio effects (AEC/NS/AGC toggles),"Integrate VAD to gate mic frames; expose toggles for AcousticEchoCanceler, NoiseSuppressor, AutomaticGainControl where available.
+Acceptance criteria:
+- VAD thresholds configurable; emits VadScore messages
+- Gate logic pauses sending when silence persists beyond threshold
+- Expose device capability checks and fallbacks
+- UI sample VAD meter updates via Flow",Story,P0,5,Sprint 2 — Core features,"audio,vad,effects",100
+104,,"Session controls: mute/unmute, push‑to‑talk, barge‑in, feedback","Add high-level controls to the client.
+Acceptance criteria:
+- mute/unmute pauses mic pipeline and updates state
+- push-to-talk API (hold-to-record) with lifecycle-safe cancellation
+- barge-in: pauses playback upon user speech and prioritizes upstream mic frames
+- Feedback: helper to send feedback messages over WS with reason codes",Story,P0,8,Sprint 2 — Core features,"session,controls,ux",100;102;103
+105,,Client Tools helpers (+ examples),"Helpers to invoke client tools and serialize ClientToolResult; include example tools for battery level and brightness.
+Acceptance criteria:
+- Simple API: clientTools.invoke(name, args) -> result
+- Error handling taxonomy (tool unavailable, permission denied, timeout)
+- Example module guarded by runtime permissions",Story,P1,5,Sprint 2 — Core features,"tools,api,examples",
+106,,Dynamic variables utilities,"Utilities to set/merge dynamic variables on session; ensure thread-safe updates and optimistic UI.
+Acceptance criteria:
+- setDynamicVars(Map<String, Any>) merges values and emits delta
+- Retries on transient failures; idempotent semantics",Story,P1,3,Sprint 2 — Core features,"api,state",
+107,,Robust connection state machine + backoff/jitter,"Implement Disconnected ↔ Connecting ↔ Connected ↔ Recovering with exponential backoff and jitter.
+Acceptance criteria:
+- Distinguish fatal vs transient errors
+- ConnectivityManager integration for network changes
+- StateFlow exposes current state; unit tests cover transitions",Story,P0,5,Sprint 2 — Core features,"network,state",
+108,,Integration tests with MockWebServer,"End-to-end tests for connect, stream, barge-in, recover.
+Acceptance criteria:
+- Simulate WS close codes 1006/1011 and verify recovery
+- Golden test for audio framing (PCM) and Opus if enabled
+- CI job runs tests on API 24 & 33 emulator targets",Story,P1,5,Sprint 2 — Core features,"tests,ci",
+109,,Docs: KDoc + guides for Sprint 2 features,"Write KDoc and quickstart snippets for mic, VAD, session controls, and tools.
+Acceptance criteria:
+- Updated README sections
+- API examples compile in doctests",Task,P2,3,Sprint 2 — Core features,docs,
+110,100,Choose buffer sizes and audio format constants,"Define sample rate, channel config, encoding; pick 10/20ms frames.",Subtask,P0,1,Sprint 2 — Core features,audio,
+111,100,Implement ring buffer with backpressure policy,"Lock-free ring or dispatcher; drop oldest on overflow, record metrics.",Subtask,P0,2,Sprint 2 — Core features,"audio,performance",
+112,100,Lifecycle glue (start/stop on foreground service),Ensure mic stops on lifecycle events; prevent leaks/ANRs.,Subtask,P1,2,Sprint 2 — Core features,"android,lifecycle",
+113,102,PCM passthrough framing,Frame PCM into ConvAI audio messages with timestamps.,Subtask,P0,2,Sprint 2 — Core features,"audio,codec",
+114,102,NDK prototype for libopus,"JNI bridge, minimal encoder config, encode/decode loop benchmark.",Subtask,P1,3,Sprint 2 — Core features,"audio,ndk,codec",
+115,103,Integrate WebRTC VAD (native/JVM),Evaluate available VAD libs; wrap into Kotlin API.,Subtask,P0,2,Sprint 2 — Core features,"audio,vad",
+116,103,Effects capability probe,Check device support for AEC/NS/AGC; expose as API flags.,Subtask,P1,1,Sprint 2 — Core features,"audio,effects",
+117,104,Mute/unmute implementation + tests,Toggle capture pipeline; ensure state consistency.,Subtask,P0,2,Sprint 2 — Core features,"session,controls",
+118,104,Push-to-talk API + sample usage,Method startPushToTalk()/stop(); handles audio focus.,Subtask,P0,2,Sprint 2 — Core features,"session,controls,ux",
+119,104,Barge-in logic tied to VAD,Pause playback on speech; resume when agent speaks.,Subtask,P0,2,Sprint 2 — Core features,"session,audio",
+120,104,"Feedback helper (reason codes, enums)","sendFeedback(Positive/Negative, reason, freeText?)",Subtask,P1,1,Sprint 2 — Core features,"session,api",
+121,105,Client tool invocation API,"clientTools.invoke(name, args) with timeout and cancellation.",Subtask,P1,2,Sprint 2 — Core features,"tools,api",
+122,105,Serialize ClientToolResult + error mapping,Strict schema; map exceptions to failure types.,Subtask,P1,2,Sprint 2 — Core features,"tools,api",
+123,105,Example: Read battery & adjust brightness,Implements two tools; wraps permission checks.,Subtask,P2,2,Sprint 2 — Core features,"examples,android",
+124,106,Atomic merge + diff emit,Thread-safe merge; emit only changed keys.,Subtask,P1,1,Sprint 2 — Core features,"state,api",
+125,107,Error classifier (fatal vs transient),Map close codes/exceptions to recovery strategy.,Subtask,P0,2,Sprint 2 — Core features,"network,state",
+126,107,Exponential backoff with jitter,Cap at 30s with full jitter; cancel on manual disconnect.,Subtask,P0,1,Sprint 2 — Core features,"network,state",
+127,107,Connectivity events wire-up,Listen to network changes and opportunistically reconnect.,Subtask,P0,1,Sprint 2 — Core features,"network,android",
+128,108,MockWebServer WS scripts,"Script messages, delays, and close codes; reusable DSL.",Subtask,P1,2,Sprint 2 — Core features,tests,
+129,108,Audio framing golden test (PCM),Compare emitted frames to expected; tolerate drift.,Subtask,P1,1,Sprint 2 — Core features,"tests,audio",
+130,108,"CI matrix (API 24,33)",Gradle config; emulator cache warmup; headless run.,Subtask,P1,2,Sprint 2 — Core features,"ci,tests",
